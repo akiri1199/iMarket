@@ -27,4 +27,5 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [SoureController::class, 'index'])->name('source.index'); // view
 Route::post('import', [SoureController::class, 'import'])->name('source.import'); // import route
 Route::get('/load', [SoureController::class, 'load'])->name('source.load'); // view
+Route::get('/detail/{id}', [SoureController::class, 'detail'])->name('source.detail'); // view
 Route::get('/search', [SoureController::class, 'search'])->name('source.search'); // view

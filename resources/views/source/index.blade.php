@@ -106,9 +106,9 @@
             text-align: center !important;
         }
 
-        /* * {
-            border: 1px solid black;
-        } */
+        .dataTables_wrapper .dataTables_filter {
+            display: none;
+        }
     </style>
 </head>
 
@@ -128,10 +128,6 @@
             <div class="col-12">
                 <button class="btn btn-primary" type="submit">Import data</button>
             </div>
-
-            {{-- <div class="col-12">
-                <a class="btn btn-success" href="{{ route('users.export') }}">Export data</a>
-            </div> --}}
         </form>
         <div class="row">
             <div class="col-sm-6">
@@ -143,7 +139,7 @@
                         <button class="btn btn-primary" id="searchBtn">検索</button>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row" style="margin-top: 30px">
                     <div class="col-auto">
                         <select name="" id="disclusure_date" class="form-select">
                             <option value="-1">開示日</option>
@@ -155,6 +151,7 @@
                 </div>
             </div>
             <div class="col-sm-6">
+
             </div>
         </div>
 
@@ -176,20 +173,22 @@
     <script>
         $(document).ready(function() {
             var table = $('#main_table').DataTable({
+                pageLength: 9,
                 language: {
+                    "url": "//cdn.datatables.net/plug-ins/1.11.3/i18n/ja.json",
                     'paginate': {
                         'previous': '<span class="fa fa-chevron-left"></span>',
                         'next': '<span class="fa fa-chevron-right"></span>'
                     },
-                    "lengthMenu": 'Display <select class="form-control input-sm">' +
-                        '<option value="10">10</option>' +
-                        '<option value="20">20</option>' +
-                        '<option value="30">30</option>' +
-                        '<option value="40">40</option>' +
-                        '<option value="50">50</option>' +
-                        '<option value="100">100</option>' +
+                    "lengthMenu": ' <select class="form-control input-sm">' +
+                        '<option value="9">3</option>' +
+                        '<option value="18">6</option>' +
+                        '<option value="27">9</option>' +
+                        '<option value="36">12</option>' +
+                        '<option value="45">15</option>' +
+                        '<option value="54">18</option>' +
                         '<option value="-1">All</option>' +
-                        '</select> results'
+                        '</select> 件'
                 },
                 stateSave: true,
                 processing: true,
@@ -197,193 +196,191 @@
                 ajax: "{{ route('source.load') }}",
                 columnDefs: [{
                     orderable: false,
-                    targets: '_all'
+                    targets: '_all',
+                    render: function(data, type, row) {
+                        if (Math.abs(data) > 1000000) {
+                            var dividedValue = (data / 1000000);
+                            return dividedValue;
+                        }
+                        if (typeof data === 'string') {
+                            return data.replace("四半期", "Q").replace("第", "").replace("年", "/")
+                                .replace("月期", "").replace("通期", "4Q");
+                        } else {
+                            return data;
+                        }
+                    }
                 }],
                 columns: [{
-                        data: 'stock_code',
-                        name: 'stock_code'
+                        data: 'update_date'
                     },
                     {
-                        data: 'company',
-                        name: 'company'
+                        data: 'company'
                     },
                     {
-                        data: 'stock_code',
-                        name: 'stock_code'
+                        data: 'fiscal'
                     },
                     {
-                        data: 'fiscal',
-                        name: 'fiscal'
+                        data: 'fiscal_term'
                     },
                     {
-                        data: 'fiscal_term',
-                        name: 'fiscal_term'
+                        data: 'sales_amount'
                     },
                     {
-                        data: 'sales_amount',
-                        name: 'sales_amount'
+                        data: 'sales_rate'
                     },
                     {
-                        data: 'sales_rate',
-                        name: 'sales_rate'
+                        data: 'operating_income'
                     },
                     {
-                        data: 'operating_income',
-                        name: 'operating_income'
+                        data: 'operating_rate'
                     },
                     {
-                        data: 'operating_rate',
-                        name: 'operating_rate'
+                        data: 'odinary_profit'
                     },
                     {
-                        data: 'odinary_profit',
-                        name: 'odinary_profit'
+                        data: 'odinary_rate'
                     },
                     {
-                        data: 'odinary_rate',
-                        name: 'odinary_rate'
+                        data: 'net_income'
                     },
                     {
-                        data: 'net_income',
-                        name: 'net_income'
+                        data: 'net_rate'
                     },
                     {
-                        data: 'net_rate',
-                        name: 'net_rate'
+                        data: 'net_income_per_share'
                     },
                     {
-                        data: 'net_income_per_share',
-                        name: 'net_income_per_share'
-                    },
-                    {
-                        data: 'stock_code',
-                        name: 'stock_code'
+                        data: 'action'
                     }
-
                 ],
-
                 'rowsGroup': [0],
-                rowCallback: function(row, data) {
-                    // Add a description to each row
-                    var description =
-                        "fasfsadf"; // Replace 'description' with the actual property name in your data object
-                    if (description) {
-                        $(row).attr('title', description);
-                    }
-                },
                 initComplete: function() {
                     $('.sorting, .sorting_asc, .sorting_desc').removeClass(
                         'sorting sorting_asc sorting_desc').addClass('no-sort');
                     var tableHeader = $('#main_table thead');
                     var newRow = $('<tr>');
-                    newRow.append($('<th ">').text('時間'));
+                    newRow.append($('<th>').text('更新日'));
                     newRow.append($('<th>').text('会社名'));
-                    newRow.append($('<th>').text('PDF'));
                     newRow.append($('<th>').text('決算期'));
                     newRow.append($('<th>').text('四半期'));
-
                     newRow.append($('<th colspan="2">').text('売上高'));
                     newRow.append($('<th colspan="2">').text('営業利益'));
                     newRow.append($('<th colspan="2">').text('経常利益'));
                     newRow.append($('<th colspan="2">').text('純利益'));
-
                     newRow.append($('<th>').text('EPS'));
                     newRow.append($('<th>').text('コード'));
-                    // Append the new row to the table header
                     tableHeader.append(newRow);
                 }
             })
 
-
             $('#searchBtn').on('click', function() {
                 var searchText = $("#searchText").val();
-                table.destroy();
-                //   table.destroy();
-                table = $('#main_table').DataTable({
+                if (searchText != "") {
+                    window.location.href = "/detail/" + searchText;
+                }
+            });
+            $('#disclusure_date').on('change', function() {
+                var searchText = $(this).val();
+                var table = $('#main_table').DataTable({
+                    pageLength: 9,
+                    destroy: true,
                     language: {
+                        "url": "//cdn.datatables.net/plug-ins/1.11.3/i18n/ja.json",
                         'paginate': {
                             'previous': '<span class="fa fa-chevron-left"></span>',
                             'next': '<span class="fa fa-chevron-right"></span>'
                         },
-                        "lengthMenu": 'Display <select class="form-control input-sm">' +
-                            '<option value="10">10</option>' +
-                            '<option value="20">20</option>' +
-                            '<option value="30">30</option>' +
-                            '<option value="40">40</option>' +
-                            '<option value="50">50</option>' +
+                        "lengthMenu": ' <select class="form-control input-sm">' +
+                            '<option value="9">3</option>' +
+                            '<option value="18">6</option>' +
+                            '<option value="27">9</option>' +
+                            '<option value="36">12</option>' +
+                            '<option value="45">15</option>' +
+                            '<option value="54">18</option>' +
                             '<option value="-1">All</option>' +
-                            '</select> results'
+                            '</select> 件'
                     },
                     stateSave: true,
                     processing: true,
                     serverSide: true,
-                    ajax: '/search?keyword=' + searchText,
+                    ajax: {
+                        url: '/load',
+                        data: function(d) {
+                            d.update_date = searchText;
+                        },
+                        dataSrc: 'data'
+                    },
                     columnDefs: [{
                         orderable: false,
-                        targets: '_all'
+                        targets: '_all',
+                        render: function(data, type, row) {
+                            if (Math.abs(data) > 1000000) {
+                                var dividedValue = (data / 1000000);
+                                return dividedValue;
+                            }
+                            if (typeof data === 'string') {
+                                return data.replace("四半期", "Q").replace("第", "")
+                                    .replace("年", "/")
+                                    .replace("月期", "").replace("通期", "4Q");
+                            } else {
+                                return data;
+                            }
+                        }
                     }],
                     columns: [{
-                            data: 'stock_code',
-                            name: 'stock_code'
+                            data: 'update_date'
                         },
                         {
-                            data: 'company',
-                            name: 'company'
+                            data: 'company'
                         },
                         {
-                            data: 'stock_code',
-                            name: 'stock_code'
+                            data: 'fiscal'
                         },
                         {
-                            data: 'fiscal',
-                            name: 'fiscal'
+                            data: 'fiscal_term'
                         },
                         {
-                            data: 'fiscal_term',
-                            name: 'fiscal_term'
+                            data: 'sales_amount'
                         },
                         {
-                            data: 'sales_amount',
-                            name: 'sales_amount'
+                            data: 'sales_rate'
                         },
                         {
-                            data: 'sales_rate',
-                            name: 'sales_rate'
+                            data: 'operating_income'
                         },
                         {
-                            data: 'operating_income',
-                            name: 'operating_income'
+                            data: 'operating_rate'
                         },
                         {
-                            data: 'operating_rate',
-                            name: 'operating_rate'
+                            data: 'odinary_profit'
                         },
                         {
-                            data: 'odinary_profit',
-                            name: 'odinary_profit'
+                            data: 'odinary_rate'
                         },
                         {
-                            data: 'odinary_rate',
-                            name: 'odinary_rate'
+                            data: 'net_income'
                         },
                         {
-                            data: 'net_income',
-                            name: 'net_income'
+                            data: 'net_rate'
                         },
                         {
-                            data: 'net_rate',
-                            name: 'net_rate'
+                            data: 'net_income_per_share'
                         },
                         {
-                            data: 'net_income_per_share',
-                            name: 'net_income_per_share'
-                        },
-                        {
-                            data: 'stock_code',
-                            name: 'stock_code'
+                            data: 'action'
                         }
-                    ]
+                    ],
+                    'rowsGroup': [0],
+
+                    rowCallback: function(row, data, index) {
+                        if (index % 3 === 1 || index % 3 === 2) {
+                            $(row).find('td:eq(0)').html('');
+                            $(row).find('td:eq(1)').html('');
+                            $(row).find('td:eq(13)').html('');
+                        }
+                    }
                 })
+
             });
         });
     </script>
